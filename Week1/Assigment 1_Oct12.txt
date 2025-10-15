@@ -3,23 +3,73 @@ Home Assignments 1:
 Build the following API requests
 
 a) Provide a user story from your project or sample userstory--> ask to convert into non-functional testcases
----------------------------------
-
-{
+--------------------------------------------------------------------------------------------------------------
+API request:
+curl --location 'https://api.groq.com/openai/v1/chat/completions' \
+--header 'Content-Type: application/json' \
+--header 'Authorization: Bearer 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' \
+--header 'Cookie: __cf_bm=MqlntCm1R_GKMNICEf0ALLVtUqqBGtB3S.lTo07RKl0-1760555157-1.0.1.1-ICHiMb1Ud.uN7uxkuLDI8bseFMvBtxTUGud1_GPp7y.Elr83DlJ8MIYVPRR8x.Lgg_eRAoH.IHO8CR3wLQllLlV0WDnYCPFQcEYZOKZdXFA' \
+--data '{
 "model": "openai/gpt-oss-120b",
 "messages": [{
     "role": "user",
-    "content": "Write a non-functional test case for Cloud storage application. Focus on performance, scalability, and reliability aspects.verify the functionality with multiple buckets and large files (More than 1TB), more than 2000 objects. Provide at least 10 detailed non-functional test cases.Provide Test case ID, Description, Actual result, expected result, steps for each test cases.Present the results in a tabular format suitable for documentation or Excel export.\n "
+    "content": "Write a non-functional test case for Cloud storage application. Focus on performance, scalability, and reliability aspects.verify the functionality with multiple buckets and large files (More than 1TB), more than 2000 objects. Provide at least 5 detailed non-functional test cases.Provide Test case ID, Description, Actual result, expected result, steps for each test cases.Present the results in a tabular format suitable for documentation or Excel export.\n "
 },
 {
     "role": "system",
     "content": "You are an AI assistant to prepare Non functional test case sheet for a Cloud Storage Application."
 }]
+}'
+
+Resposne:
+{
+    "id": "chatcmpl-2c409135-59dd-47df-8f53-d846d496a4f9",
+    "object": "chat.completion",
+    "created": 1760555157,
+    "model": "openai/gpt-oss-120b",
+    "choices": [
+        {
+            "index": 0,
+            "message": {
+                "role": "assistant",
+                "content": "**Non‑Functional Test Cases – Cloud Storage Application**  \n*(Performance, Scalability & Reliability – covering multiple buckets, >1 TB files, >2000 objects)*  \n\n| Test Case ID | Description | Preconditions / Test Data | Steps (Execution) | Expected Result | Actual Result |\n|--------------|-------------|---------------------------|-------------------|-----------------|---------------|\n| **NF‑P‑001** | **Upload throughput for a single >1 TB file** – measure sustained write bandwidth when uploading a 1.2 TB file to three different buckets (standard, infrequent‑access, archive). | • 3 buckets already created (Bucket‑Std, Bucket‑IA, Bucket‑Arch).<br>• 1.2 TB test file generated (random data, 1 GB chunks).<br>• Network path with at least 10 Gbps capacity.<br>• Monitoring tools (CloudWatch, Grafana) ready. | 1. Start a timer.<br>2. Initiate multipart upload to **Bucket‑Std** using the SDK/CLI with a part size of 128 MiB.<br>3. Record per‑part upload time and aggregate throughput.<br>4. Repeat steps 2‑3 for **Bucket‑IA** and **Bucket‑Arch**.<br>5. After each upload finishes, stop the timer and capture total elapsed time, average throughput, and any retries. | • Average upload throughput ≥ 8 Gbps for all storage classes.<br>• No more than 2 % retry rate.<br>• Upload completes within ≤ 2 hours (≈ 1.2 TB ÷ 8 Gbps ≈ 2 h).<br>• All parts successfully committed; file is listed in the bucket. | |\n| **NF‑S‑002** | **Concurrent object upload – scalability test** – upload 2 500 objects (size ≈ 5 MiB each) simultaneously across 5 buckets and verify that the system scales linearly. | • 5 buckets created (Bucket‑A…E).<br>• 2 500 test objects prepared (5 MiB each).<br>• Load‑generator tool (e.g., k6, JMeter) configured for 250 parallel threads per bucket. | 1. Launch the load‑generator with 250 concurrent upload threads targeting **Bucket‑A**.<br>2. After 30 seconds, start the same load‑generator for **Bucket‑B**, then **C**, **D**, **E**, staggering each by 30 seconds.<br>3. Monitor CPU, memory, network, and storage‑service request‑latency metrics during the run.<br>4. Capture total time to upload all 2 500 objects and the 95th‑percentile latency per bucket. | • End‑to‑end upload time ≤ 5 minutes for the whole set.<br>• 95th‑percentile latency ≤ 300 ms per object.<br>• System CPU ≤ 70 % and network utilisation ≤ 80 % on the client side.<br>• No “throttling” or error responses (HTTP 429) observed. | |\n| **NF‑P‑003** | **Random‑read latency for large objects** – verify that retrieving random 1 GiB ranges from a 1.5 TB file stored in three buckets meets latency SLA. | • 3 buckets each containing a 1.5 TB object (uploaded in NF‑P‑001).<br>• A script that issues 1000 ranged‑GET requests (random offset, length = 1 GiB). | 1. Start the latency‑measurement script pointing to **Bucket‑Std** object.<br>2. For each request, log start‑time, end‑time, and any error code.<br>3. Repeat for **Bucket‑IA** and **Bucket‑Arch**.<br>4. Compute average, median, and 99th‑percentile latency per bucket. | • Average latency ≤ 800 ms for **Bucket‑Std** and **Bucket‑IA**; ≤ 1.5 s for **Bucket‑Arch**.<br>• 99th‑percentile latency ≤ 1.2 s (Std/IA) and ≤ 2.5 s (Arch).<br>• 0 % data‑corruption errors (checksum validation passes). | |\n| **NF‑S‑004** | **Auto‑scaling under extreme load** – simulate 10 000 simultaneous GET/PUT requests across 10 buckets and verify that the service auto‑scales without performance degradation. | • 10 buckets (Bucket‑01 … Bucket‑10).<br>• Load‑generator capable of 10 k concurrent virtual users.<br>• Auto‑scale policies configured (CPU > 70 % → add instances; CPU < 30 % → remove). | 1. Warm‑up: generate 1 k steady‑state requests per bucket for 2 minutes.<br>2. Spike: ramp up to 10 k concurrent requests (mix 70 % GET, 30 % PUT) over 30 seconds.<br>3. Hold peak load for 5 minutes while capturing scaling events, request latency, error rates, and resource utilisation.<br>4. Cool‑down: return to warm‑up level and observe scale‑down. | • System adds at least 2 additional service instances within 60 seconds of crossing the CPU threshold.<br>• 95th‑percentile latency ≤ 500 ms during peak load.<br>• Error rate ≤ 0.1 % (no service‑unavailable errors).<br>• Scale‑down occurs after load drops, returning to baseline within 5 minutes. | |\n| **NF‑R‑005** | **Data durability & recovery after node failure** – verify that after simulating loss of a storage node, all objects (including >1 TB files) remain accessible and are automatically replicated to meet the 99.9999999 % durability target. | • Multi‑zone deployment with replication factor = 3.<br>• 3 buckets each holding a 1.2 TB file and 2 000 small objects.<br>• Ability to isolate/shut‑down a storage node (or use a fault‑injection tool). | 1. Record baseline checksum (MD5/SHA‑256) for each test object.<br>2. Trigger node‑failure simulation (e.g., stop the storage service on one zone).<br>3. Immediately attempt to read every object (both large files and small objects) from the remaining nodes.<br>4. Verify that replication processes start (monitor replication‑queue metrics).<br>5. After replication completes, recompute checksums and compare with baseline. | • All objects are readable within 30 seconds of failure detection.<br>• Replication restores the missing copy within 5 minutes.<br>• Post‑recovery checksums match baseline (no data loss or corruption).<br>• Service health reports “healthy” and durability SLA remains satisfied. | |\n\n**How to use the table**  \n\n* Copy the markdown table into Excel (Data → From Text/CSV) or paste directly – Excel will split the columns automatically.  \n* Fill the **Actual Result** column during test execution.  \n* Add additional columns (e.g., Tester, Date, Status) as needed for your test management tool.  \n\nThese five test cases cover the critical non‑functional dimensions required for a cloud storage service handling massive files and high object counts, ensuring the platform meets performance, scalability, and reliability expectations.",
+                "reasoning": "We need to produce a non-functional test case sheet for a Cloud Storage Application. Focus on performance, scalability, and reliability aspects. Verify functionality with multiple buckets and large files (>1TB), more than 2000 objects. Provide at least 5 detailed non-functional test cases. Provide Test case ID, Description, Actual result, Expected result, Steps for each test case. Present results in a tabular format suitable for documentation or Excel export.\n\nSo we need a table with columns: Test Case ID, Description, Preconditions (maybe?), Steps, Expected Result, Actual Result. We can include fields. Provide at least 5 test cases. Each focusing on performance, scalability, reliability. Use large files and many objects.\n\nWe'll present as markdown table. Provide separate sections for each test case with steps as bullet points perhaps inside the cell.\n\nWe must include \"Actual result\" column but we won't have actual results yet; maybe we can leave it blank for execution.\n\nLet's produce 5 test cases:\n\n1. Upload throughput for 1TB file across multiple buckets.\n2. Concurrent upload of 2000 objects (small files) to multiple buckets.\n3. Retrieval latency for random access of objects across buckets.\n4. Auto-scaling behavior under load (simulate 10k concurrent requests).\n5. Data durability/recovery after simulated failure (node outage) for objects.\n\nMake sure each includes steps.\n\nLet's output in markdown with a table. Ensure each cell has clear steps.\n\nLet's do it."
+            },
+            "logprobs": null,
+            "finish_reason": "stop"
+        }
+    ],
+    "usage": {
+        "queue_time": 0.043360202,
+        "prompt_tokens": 181,
+        "prompt_time": 0.008698208,
+        "completion_tokens": 1955,
+        "completion_time": 3.994252811,
+        "total_tokens": 2136,
+        "total_time": 4.002951019
+    },
+    "usage_breakdown": null,
+    "system_fingerprint": "fp_4913bcd64f",
+    "x_groq": {
+        "id": "req_01k7mm7e13eaka52z3wx5c51d1"
+    },
+    "service_tier": "on_demand"
 }
+
+
 
 b) Confirmation of the audio (recorded content of your voice) converted into correct text
 -----------------------------------------------------------------------------------------------
-API response: (I recorded the audi with below text and verified that it shown correctly in the response)
+API request:
+
+curl --location 'https://api.groq.com/openai/v1/audio/translations' \
+--header 'Content-Type: multipart/form-data' \
+--header 'Authorization: Bearer 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' \
+--header 'Cookie: __cf_bm=L9QuzD0KnDBtwtXbF03Dcl4LwFh57Zkp5l2Dlk64xMM-1760547883-1.0.1.1-mnBrUD0sZxrUkSTo2lUvpaCR1jiv7lgZin_ZBXCYnQgRyKkDDcU9Rlf_5qvK9koy5W3RXi9f.NZ4JP_iHQhIF1CiliYt2CtEN2IhONYqyqA' \
+--form 'file=@"/C:/Users/Goran Vestermajer/Downloads/WhatsApp Ptt 2025-10-15 at 10.26.08 PM.ogg"' \
+--form 'model="whisper-large-v3"'
+
+API response: (I recorded the audio with below text and verified that it shown correctly in the response)
 {
     "text": " OpenAI is very interesting one.",
     "x_groq": {
@@ -30,9 +80,12 @@ API response: (I recorded the audi with below text and verified that it shown co
 
 c) Provide captcha (OCR images) as base64 string from different site --> confirm their text
 ------------------------------------------------------------------------------------------------
-
-
-{
+API request:
+curl --location 'https://api.groq.com/openai/v1/chat/completions' \
+--header 'Content-Type: application/json' \
+--header 'Authorization: Bearer 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' \
+--header 'Cookie: __cf_bm=L9QuzD0KnDBtwtXbF03Dcl4LwFh57Zkp5l2Dlk64xMM-1760547883-1.0.1.1-mnBrUD0sZxrUkSTo2lUvpaCR1jiv7lgZin_ZBXCYnQgRyKkDDcU9Rlf_5qvK9koy5W3RXi9f.NZ4JP_iHQhIF1CiliYt2CtEN2IhONYqyqA' \
+--data '{
   "model": "meta-llama/llama-4-scout-17b-16e-instruct",
   "messages": [
     {
@@ -54,5 +107,40 @@ c) Provide captcha (OCR images) as base64 string from different site --> confirm
    
   ],
   "max_tokens": 500
+}
+'
+
+Response:
+{
+    "id": "chatcmpl-cd213af6-8e4d-48ec-862d-e729183a9aec",
+    "object": "chat.completion",
+    "created": 1760547883,
+    "model": "meta-llama/llama-4-scout-17b-16e-instruct",
+    "choices": [
+        {
+            "index": 0,
+            "message": {
+                "role": "assistant",
+                "content": "chPrCy"
+            },
+            "logprobs": null,
+            "finish_reason": "stop"
+        }
+    ],
+    "usage": {
+        "queue_time": 0.057450417,
+        "prompt_tokens": 181,
+        "prompt_time": 0.004518893,
+        "completion_tokens": 4,
+        "completion_time": 0.009330232,
+        "total_tokens": 185,
+        "total_time": 0.013849125
+    },
+    "usage_breakdown": null,
+    "system_fingerprint": "fp_37da608fc1",
+    "x_groq": {
+        "id": "req_01k7md9jdwen7bk3ka37az39sm"
+    },
+    "service_tier": "on_demand"
 }
 
