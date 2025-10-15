@@ -28,10 +28,35 @@ Test data should be Clear, structured, and easy to understand.
 Persona:
 Act as a Senior QA Engineer.
 
+Output:
+| **Card Type** | **Applicant Name** | **Applicant Country** | **Applicant Age** | **Expiry Date** | **Application Status (Expected Result)**   |
+| ------------- | ------------------ | --------------------- | ----------------- | --------------- | ------------------------------------------ |
+| Visa          | John Smith         | USA                   | **17**            | 12/2030         | ❌ **Rejected (Below minimum age)**         |
+| Visa          | Emily Brown        | Canada                | **18**            | 11/2029         | ✅ **Approved (Minimum valid age)**         |
+| MasterCard    | Arjun Patel        | India                 | **19**            | 06/2031         | ✅ **Approved (Valid age)**                 |
+| MasterCard    | Mia Lopez          | Mexico                | **16**            | 04/2028         | ❌ **Rejected (Underage applicant)**        |
+| Amex          | Sarah Johnson      | UK                    | **18**            | 08/2032         | ✅ **Approved (Boundary valid age)**        |
+| Amex          | Oliver Davis       | Australia             | **17**            | 10/2029         | ❌ **Rejected (Below minimum)**             |
+| Discover      | David Chen         | Singapore             | **20**            | 02/2031         | ✅ **Approved (Valid applicant)**           |
+| Discover      | Linda Taylor       | USA                   | **15**            | 09/2027         | ❌ **Rejected (Invalid age)**               |
+| Visa          | Noah Williams      | Germany               | **65**            | 03/2034         | ✅ **Approved (Valid senior applicant)**    |
+| MasterCard    | Sophia Martinez    | Spain                 | **120**           | 07/2035         | ❌ **Rejected (Unrealistic age)**           |
+| Amex          | Ethan Wilson       | France                | **0**             | 01/2028         | ❌ **Rejected (Invalid boundary value)**    |
+| Discover      | Chloe Anderson     | Japan                 | **18**            | 05/2030         | ✅ **Approved (Valid age & expiry)**        |
+| Visa          | Daniel Carter      | Brazil                | **17.9**          | 10/2031         | ❌ **Rejected (Age not meeting threshold)** |
+| MasterCard    | Ava Nguyen         | Vietnam               | **18.1**          | 12/2032         | ✅ **Approved (Slightly above boundary)**   |
+| Amex          | Lucas White        | UAE                   | **30**            | 06/2033         | ✅ **Approved (Valid middle age range)**    |
+
+
 
 In API:
 -----------
-{
+API request:
+curl --location 'https://api.groq.com/openai/v1/chat/completions' \
+--header 'Content-Type: application/json' \
+--header 'Authorization: Bearer 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' \
+--header 'Cookie: __cf_bm=QmzhiT_KEdBAkx.cW2bznk.bmAm22GoIW1liTJnQNsg-1760549730-1.0.1.1-6gDlheB5Xyxd5qCIYQGDeB4lx4HpAPvkRPQxxZg0pJ7CBlTqdeJ7BhiLL2YVQ8G1nYMkcoNIZw1P_YWZoW9dCzlVu.wlVENz90xI7TWfdXQ' \
+--data '{
 "model": "openai/gpt-oss-20b",
 "messages": [{
     "role": "user",
@@ -45,4 +70,40 @@ In API:
     "role": "assistant",
     "content": "Provide the test data in a tabular format with the following columns:Card Type, Applicant Name, Applicant Country, Applicant Age, Expiry Date, Application Status (Expected Result)." 
 }]
+}'
+
+
+API response:
+{
+    "id": "chatcmpl-cb55f39f-3894-4912-b5eb-c98c7828dcae",
+    "object": "chat.completion",
+    "created": 1760549964,
+    "model": "openai/gpt-oss-20b",
+    "choices": [
+        {
+            "index": 0,
+            "message": {
+                "role": "assistant",
+                "content": "**Credit Card Application – Boundary Value & Edge‑Case Test Data**\n\n| # | Card Type | Applicant Name | Applicant Country | Applicant Age | Expiry Date | Expected Application Status |\n|---|-----------|----------------|-------------------|---------------|-------------|-----------------------------|\n| 1 | Visa | John Doe | US | 17 | 12/2026 | **Reject** – under‑age (boundary <18) |\n| 2 | Visa | John Doe | US | 18 | 12/2026 | **Approve** – age meets minimum |\n| 3 | Visa | John Doe | US | 19 | 12/2026 | **Approve** – above minimum |\n| 4 | Visa | John Doe | US | 0 | 12/2026 | **Reject** – invalid age (≤0) |\n| 5 | Visa | John Doe | US | -5 | 12/2026 | **Reject** – negative age |\n| 6 | Visa | John Doe | US | 65 | 12/2026 | **Approve** – older applicant |\n| 7 | Visa | John Doe | US | 18.5 | 12/2026 | **Reject** – non‑integer age value |\n| 8 | Visa | John Doe | US | 18 | 01/2022 | **Reject** – expiry date in the past |\n| 9 | Visa | John Doe | US | 18 | 12/2026 | **Approve** – expiry in future |\n|10 | Visa | John Doe | US | 18 | 12/2026 | **Approve** – expiry current month (assuming month‑level granularity) |\n|11 | Visa | John Doe | US | 18 | 13/2026 | **Reject** – invalid month in expiry |\n|12 | Visa | John Doe | US | 18 | 12/26 | **Reject** – invalid year format |\n|13 | Visa | 12345 | US | 18 | 12/2026 | **Reject** – numeric applicant name |\n|14 | Visa | | US | 18 | 12/2026 | **Reject** – empty applicant name |\n|15 | Visa | AVeryLongNameThatExceedsTheMaximumLengthAllowedByTheSystemWhichIsProbablyAroundThirtyCharacters | US | 18 | 12/2026 | **Reject** – name too long |\n|16 | MasterCard | Jane Smith | CA | 17 | 11/2025 | **Reject** – under‑age |\n|17 | MasterCard | Jane Smith | CA | 18 | 11/2025 | **Approve** |\n|18 | MasterCard | Jane Smith | CA | 19 | 11/2025 | **Approve** |\n|19 | MasterCard | Jane Smith | CA | 18 | 11/2025 | **Approve** |\n|20 | MasterCard | Jane Smith | CA | 18 | 11/2025 | **Approve** |\n|21 | Amex | Alice Johnson | MX | 18 | 05/2027 | **Approve** – valid country ISO code |\n|22 | Amex | Alice Johnson | ZZ | 18 | 05/2027 | **Reject** – unsupported country code |\n|23 | Amex | Alice Johnson |  | 18 | 05/2027 | **Reject** – empty country |\n|24 | Discover | Bob Lee | US | 18 | 02/2024 | **Reject** – expiry in the past (assuming today > Feb 2024) |\n|25 | Discover | Bob Lee | US | 18 | 02/2027 | **Approve** – future expiry |\n|26 | Discover | Bob Lee | US | 18 | 02/2027 | **Approve** – current month if month is Feb 2027 |\n|27 | Discover | Bob Lee | US | 18 | 02/2027 | **Approve** – future expiry |\n|28 | Visa | Charlie Brown | US | 18 | 07/2023 | **Reject** – expiry in past (if today > Jul 2023) |\n|29 | Visa | Charlie Brown | US | 18 | 07/2024 | **Approve** – expiry future (if today < Jul 2024) |\n|30 | Visa | Charlie Brown | US | 18 | 07/2024 | **Approve** – expiry future (if today < Jul 2024) |\n|31 | Visa | Charlie Brown | US | 18 | 07/2024 | **Approve** – expiry future (if today < Jul 2024) |\n|32 | Visa | Charlie Brown | US | 18 | 07/2024 | **Approve** – expiry future (if today < Jul 2024) |\n|33 | Visa | Charlie Brown | US | 18 | 07/2024 | **Approve** – expiry future (if today < Jul 2024) |\n|34 | Visa | Charlie Brown | US | 18 | 07/2024 | **Approve** – expiry future (if today < Jul 2024) |\n|35 | Visa | Charlie Brown | US | 18 | 07/2024 | **Approve** – expiry future (if today < Jul 2024) |\n|36 | Visa | Charlie Brown | US | 18 | 07/2024 | **Approve** – expiry future (if today < Jul 2024) |\n\n> **Notes on the table**  \n> 1. **Age boundary values** – 17 (reject), 18 (approve), 19 (approve), 0 / -5 (invalid), 65 (approve), 18.5 (reject).  \n> 2. **Expiry date** – past, current month, future month, invalid formats.  \n> 3. **Applicant name** – normal, empty, numeric, excessively long.  \n> 4. **Country** – valid ISO country codes (US, CA, MX), unsupported code (ZZ), empty.  \n> 5. **Card Types** – Visa, MasterCard, Amex, Discover.  \n\nUse the above dataset to drive automated UI or API test cases, ensuring that boundary and edge‑case behavior matches the expected application logic.",
+                "reasoning": "The user wants test data for a Credit Card Application covering Card Type, Applicant Name, Applicant Country, Expiry Date, Application Status, Applicant Age. Use boundary value analysis: age < 18 => reject, age ≥18 => approve. Cover card types Visa, MasterCard, Amex, Discover, etc. Include valid and invalid data to verify edge cases. Provide clear, structured data easy to understand. Provide test data in a table. So we need to produce a table, maybe multiple rows: for each card type, multiple rows: age just below 18 (17), at 18, above (19), maybe far above (65). Also include invalid age data like negative, non-numeric, etc. Expiry date valid? Maybe include expiry dates that are past, current, future. Applicant country: valid (USA, Canada), invalid (empty, unsupported code). Applicant Name: valid names, invalid (empty, numeric, too long). Application status: expected result: Approved / Rejected / Error. Should cover edge cases.\n\nSo produce a table with columns:\n\n- Test Case ID\n- Card Type\n- Applicant Name\n- Applicant Country\n- Applicant Age\n- Expiry Date\n- Application Status (Expected)\n\nMaybe separate into valid and invalid test sets.\n\nLet's produce 20-30 rows covering combos.\n\nEdge cases: Age 17 (rejected), 18 (approved), 19 (approved), 0 (invalid), -5 (invalid), 100 (approved), 18.5 (invalid age type). Expiry: past date (e.g., 01/2022), current month, future month, invalid format. Country: valid ISO codes, invalid codes, empty. Name: normal, empty, numeric, extremely long.\n\nWe'll create a table. Ensure it's clear. Use markdown.\n\nLet's produce."
+            },
+            "logprobs": null,
+            "finish_reason": "stop"
+        }
+    ],
+    "usage": {
+        "queue_time": 0.043346089,
+        "prompt_tokens": 245,
+        "prompt_time": 0.011943941,
+        "completion_tokens": 1735,
+        "completion_time": 1.755133263,
+        "total_tokens": 1980,
+        "total_time": 1.767077204
+    },
+    "usage_breakdown": null,
+    "system_fingerprint": "fp_80501ff3a1",
+    "x_groq": {
+        "id": "req_01k7mf90g6f6rt0x3e5spmtnv3"
+    },
+    "service_tier": "on_demand"
 }
